@@ -21,11 +21,6 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://docs.swmansion.com/scarb/install.sh | sh -s -- -v $SCARB_VERSION
           echo "${HOME}/.local/bin" >> $GITHUB_PATH
 
-      - name: Install Dojo
-        run: |
-          curl -L https://install.dojoengine.org | bash -s -- -v $DOJO_VERSION
-          echo "${HOME}/.local/bin" >> $GITHUB_PATH
-    
       - name: Check format
         run: scarb fmt --check
 
@@ -42,10 +37,10 @@ jobs:
         with:
           scarb-version: "2.9.4"
 
-      - name: Set up snforge
-        uses: foundry-rs/setup-snfoundry@v3
-        with:
-          starknet-foundry-version: "0.38.3"
+      - name: Install Dojo
+        run: |
+          curl -L https://install.dojoengine.org | bash -s -- -v $DOJO_VERSION
+          echo "${HOME}/.local/bin" >> $GITHUB_PATH
 
       - name: Run Build
         run: sozo build
