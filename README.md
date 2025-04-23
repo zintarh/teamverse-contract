@@ -1,76 +1,41 @@
-![Dojo Starter](./assets/cover.png)
+# TeamVerse
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset=".github/mark-dark.svg">
-  <img alt="Dojo logo" align="right" width="120" src=".github/mark-light.svg">
-</picture>
+TeamVerse is a revolutionary platform that transforms remote tech collaboration through augmented reality (AR). It creates an engaging virtual playground where tech professionals can connect, collaborate, and build meaningful relationships while having fun.
 
-<a href="https://x.com/ohayo_dojo">
-<img src="https://img.shields.io/twitter/follow/dojostarknet?style=social"/>
-</a>
-<a href="https://github.com/dojoengine/dojo/stargazers">
-<img src="https://img.shields.io/github/stars/dojoengine/dojo?style=social"/>
-</a>
+## Features
+- Real-time AR interactions
+- Competitive team games
+- Virtual collaboration spaces
+- Community-driven environment
 
-[![discord](https://img.shields.io/badge/join-dojo-green?logo=discord&logoColor=white)](https://discord.com/invite/dojoengine)
-[![Telegram Chat][tg-badge]][tg-url]
+## Getting Started
 
-[tg-badge]: https://img.shields.io/endpoint?color=neon&logo=telegram&label=chat&style=flat-square&url=https%3A%2F%2Ftg.sumanjay.workers.dev%2Fdojoengine
-[tg-url]: https://t.me/dojoengine
+### Prerequisites
+- Git installed on your machine
+- Cairo development environment
+- Sozo CLI tool
 
-# Dojo Starter: Official Guide
+### Installation
 
-A quickstart guide to help you build and deploy your first Dojo provable game.
+1. Fork the repository
 
-Read the full tutorial [here](https://dojoengine.org/tutorial/dojo-starter).
-
-## Running Locally
-
-#### Terminal one (Make sure this is running)
-
+2. Clone the repository:
 ```bash
-# Run Katana
-katana --dev --dev.no-fee
+git clone https://github.com/your-username/teamverse-contract.git
+cd teamverse-contract
 ```
 
-#### Terminal two
-
+### Development
+Build and test your changes:
 ```bash
-# Build the example
+# Build the project
 sozo build
 
-# Inspect the world
-sozo inspect
-
-# Migrate the example
-sozo migrate
-
-# Start Torii
-# Replace <WORLD_ADDRESS> with the address of the deployed world from the previous step
-torii --world <WORLD_ADDRESS> --http.cors_origins "*"
+# Run tests
+sozo test
 ```
 
-## Docker
-You can start stack using docker compose. [Here are the installation instruction](https://docs.docker.com/engine/install/)
+## Contributing
+We welcome contributions! Please check our issues page for open tasks.
 
-```bash
-docker compose up
-```
-You'll get all services logs in the same terminal instance. Whenever you want to stop just ctrl+c
-
----
-
-## Contribution
-
-1. **Report a Bug**
-
-    - If you think you have encountered a bug, and we should know about it, feel free to report it [here](https://github.com/dojoengine/dojo-starter/issues) and we will take care of it.
-
-2. **Request a Feature**
-
-    - You can also request for a feature [here](https://github.com/dojoengine/dojo-starter/issues), and if it's viable, it will be picked for development.
-
-3. **Create a Pull Request**
-    - It can't get better then this, your pull request will be appreciated by the community.
-
-Happy coding!
+Happy coding! 🚀
