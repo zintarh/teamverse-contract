@@ -1,51 +1,42 @@
-name: CI
-
+name: Contracts CI
 on:
   push:
-    branches: [ main ]
+    branches: ["main"]
   pull_request:
-
-env:
-  SCARB_VERSION: 2.9.4
-  DOJO_VERSION: 1.4.2
-
+    branches: ["main"]
 jobs:
-  check:
-    name: Check Project
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Install Scarb
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://docs.swmansion.com/scarb/install.sh | sh -s -- -v $SCARB_VERSION
-          echo "${HOME}/.local/bin" >> $GITHUB_PATH
-
-      - name: Check format
-        run: scarb fmt --check
-
-
-  test:
-    runs-on: ubuntu-latest
-    name: tests
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@main
-
-      - name: Set up Scarb
-        uses: software-mansion/setup-scarb@v1
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
         with:
-          scarb-version: "2.9.4"
+          toolchain: stable
+          override: true
 
-      - name: Install Dojo
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install asdf
+        uses: asdf-vm/actions/setup@v2
+
+      - name: Install plugins
         run: |
-          curl -L https://install.dojoengine.org | bash -s -- -v $DOJO_VERSION
-          source $HOME/.bashrc
-          dojoup install
-          echo "${HOME}/.local/bin" >> $GITHUB_PATH
+          asdf plugin add scarb
+          asdf install scarb 2.9.4
+          asdf global scarb 2.9.4
+          asdf plugin add dojo https://github.com/dojoengine/asdf-dojo
+          asdf install dojo 1.4.0 
+          asdf global dojo 1.4.0
 
-      - name: Run Build
-        run: sozo build
+      - name: Build contracts
+        run: |
+          sozo build
 
-      - name: Run Test
-        run: sozo test        
+      - name: Run tests
+        run: |
+          sozo test
+
+      - name: Check formatting
+        run: |
+          scarb fmt --check
