@@ -23,7 +23,7 @@ jobs:
 
       - name: Install Dojo
         run: |
-          curl -L https://install.dojoengine.org | bash -- -v $DOJO_VERSION
+          curl -L https://install.dojoengine.org | bash -s -- -v $DOJO_VERSION
           echo "${HOME}/.local/bin" >> $GITHUB_PATH
     
       - name: Check format
