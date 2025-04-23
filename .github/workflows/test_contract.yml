@@ -40,6 +40,8 @@ jobs:
       - name: Install Dojo
         run: |
           curl -L https://install.dojoengine.org | bash -s -- -v $DOJO_VERSION
+          source $HOME/.bashrc
+          dojoup install
           echo "${HOME}/.local/bin" >> $GITHUB_PATH
 
       - name: Run Build
