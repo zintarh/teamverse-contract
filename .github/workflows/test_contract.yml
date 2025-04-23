@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+env:
+  SCARB_VERSION: 2.9.4
+  DOJO_VERSION: 1.4.2
+
+jobs:
+  check:
+    name: Check Project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Scarb
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://docs.swmansion.com/scarb/install.sh | sh -s -- -v $SCARB_VERSION
+          echo "${HOME}/.local/bin" >> $GITHUB_PATH
+
+      - name: Install Dojo
+        run: |
+          curl -L https://install.dojoengine.org | bash -- -v $DOJO_VERSION
+          echo "${HOME}/.local/bin" >> $GITHUB_PATH
+    
+      - name: Check format
+        run: scarb fmt --check
+
+
+  test:
+    runs-on: ubuntu-latest
+    name: tests
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@main
+
+      - name: Set up Scarb
+        uses: software-mansion/setup-scarb@v1
+        with:
+          scarb-version: "2.9.4"
+
+      - name: Set up snforge
+        uses: foundry-rs/setup-snfoundry@v3
+        with:
+          starknet-foundry-version: "0.38.3"
+
+      - name: Run Build
+        run: sozo build
+
+      - name: Run Test
+        run: sozo test        
