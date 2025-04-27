@@ -7,17 +7,31 @@ mod tests {
         spawn_test_world, NamespaceDef, TestResource, ContractDefTrait, ContractDef,
     };
 
-    use dojo_starter::systems::actions::{actions, IActionsDispatcher, IActionsDispatcherTrait};
-    use dojo_starter::models::{Position, m_Position, Moves, m_Moves, Direction};
+    use dojo_starter::systems::teamVerse::{teamVerse};
+    use dojo_starter::interfaces::ITeamVerse::{ITeamVerseDispatcher, ITeamVerseDispatcherTrait};
+    use dojo_starter::model::game_model::{Game, m_Game, GameStatus, GameCounter, m_GameCounter};
+
+    use dojo_starter::model::player_model::{
+        Player, m_Player, UsernameToAddress, m_UsernameToAddress, AddressToUsername,
+        m_AddressToUsername,
+    };
+
+
+    use starknet::{testing, get_caller_address, contract_address_const};
+
 
     fn namespace_def() -> NamespaceDef {
         let ndef = NamespaceDef {
             namespace: "dojo_starter",
             resources: [
-                TestResource::Model(m_Position::TEST_CLASS_HASH),
-                TestResource::Model(m_Moves::TEST_CLASS_HASH),
-                TestResource::Event(actions::e_Moved::TEST_CLASS_HASH),
-                TestResource::Contract(actions::TEST_CLASS_HASH),
+                TestResource::Model(m_Player::TEST_CLASS_HASH),
+                TestResource::Model(m_UsernameToAddress::TEST_CLASS_HASH),
+                TestResource::Model(m_AddressToUsername::TEST_CLASS_HASH),
+                TestResource::Model(m_Game::TEST_CLASS_HASH),
+                TestResource::Model(m_GameCounter::TEST_CLASS_HASH),
+                TestResource::Event(teamVerse::e_PlayerCreated::TEST_CLASS_HASH),
+                TestResource::Event(teamVerse::e_GameCreated::TEST_CLASS_HASH),
+                TestResource::Contract(teamVerse::TEST_CLASS_HASH),
             ]
                 .span(),
         };
@@ -27,73 +41,183 @@ mod tests {
 
     fn contract_defs() -> Span<ContractDef> {
         [
-            ContractDefTrait::new(@"dojo_starter", @"actions")
+            ContractDefTrait::new(@"dojo_starter", @"teamVerse")
                 .with_writer_of([dojo::utils::bytearray_hash(@"dojo_starter")].span())
         ]
             .span()
     }
 
     #[test]
-    fn test_world_test_set() {
-        // Initialize test environment
-        let caller = starknet::contract_address_const::<0x0>();
+    fn test_player_registration() {
+        let caller_1 = contract_address_const::<'aji'>();
+        let username = 'Aji';
+
         let ndef = namespace_def();
-
-        // Register the resources.
         let mut world = spawn_test_world([ndef].span());
-
-        // Ensures permissions and initializations are synced.
         world.sync_perms_and_inits(contract_defs());
 
-        // Test initial position
-        let mut position: Position = world.read_model(caller);
-        assert(position.vec.x == 0 && position.vec.y == 0, 'initial position wrong');
+        let (contract_address, _) = world.dns(@"teamVerse").unwrap();
+        let actions_system = ITeamVerseDispatcher { contract_address };
 
-        // Test write_model_test
-        position.vec.x = 122;
-        position.vec.y = 88;
-
-        world.write_model_test(@position);
-
-        let mut position: Position = world.read_model(caller);
-        assert(position.vec.y == 88, 'write_value_from_id failed');
-
-        // Test model deletion
-        world.erase_model(@position);
-        let position: Position = world.read_model(caller);
-        assert(position.vec.x == 0 && position.vec.y == 0, 'erase_model failed');
+        testing::set_contract_address(caller_1);
+        actions_system.register_new_player(username);
+        let player: Player = actions_system.retrieve_player(caller_1);
+        println!("username: {}", player.username);
+        assert(player.player == caller_1, 'incorrect address');
+        assert(player.username == 'Aji', 'incorrect username');
     }
 
     #[test]
-    #[available_gas(30000000)]
-    fn test_move() {
-        let caller = starknet::contract_address_const::<0x0>();
+    #[should_panic]
+    fn test_player_registration_same_user_name() {
+        let caller_1 = contract_address_const::<'aji'>();
+        let caller_2 = contract_address_const::<'dreamer'>();
+        let username = 'Aji';
 
         let ndef = namespace_def();
         let mut world = spawn_test_world([ndef].span());
         world.sync_perms_and_inits(contract_defs());
 
-        let (contract_address, _) = world.dns(@"actions").unwrap();
-        let actions_system = IActionsDispatcher { contract_address };
+        let (contract_address, _) = world.dns(@"teamVerse").unwrap();
+        let actions_system = ITeamVerseDispatcher { contract_address };
 
-        actions_system.spawn();
-        let initial_moves: Moves = world.read_model(caller);
-        let initial_position: Position = world.read_model(caller);
+        testing::set_contract_address(caller_1);
+        actions_system.register_new_player(username);
 
-        assert(
-            initial_position.vec.x == 10 && initial_position.vec.y == 10, 'wrong initial position',
-        );
+        testing::set_contract_address(caller_2);
+        actions_system.register_new_player(username);
+    }
 
-        actions_system.move(Direction::Right(()).into());
+    #[test]
+    #[should_panic]
+    fn test_player_registration_same_user_tries_to_register_twice_with_different_username() {
+        let caller_1 = contract_address_const::<'aji'>();
+        let username = 'Aji';
+        let username1 = 'Ajidokwu';
 
-        let moves: Moves = world.read_model(caller);
-        let right_dir_felt: felt252 = Direction::Right(()).into();
+        let ndef = namespace_def();
+        let mut world = spawn_test_world([ndef].span());
+        world.sync_perms_and_inits(contract_defs());
 
-        assert(moves.remaining == initial_moves.remaining - 1, 'moves is wrong');
-        assert(moves.last_direction.unwrap().into() == right_dir_felt, 'last direction is wrong');
+        let (contract_address, _) = world.dns(@"teamVerse").unwrap();
+        let actions_system = ITeamVerseDispatcher { contract_address };
 
-        let new_position: Position = world.read_model(caller);
-        assert(new_position.vec.x == initial_position.vec.x + 1, 'position x is wrong');
-        assert(new_position.vec.y == initial_position.vec.y, 'position y is wrong');
+        testing::set_contract_address(caller_1);
+        actions_system.register_new_player(username);
+
+        testing::set_contract_address(caller_1);
+        actions_system.register_new_player(username1);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_player_registration_same_user_tries_to_register_twice_with_the_same_username() {
+        let caller_1 = contract_address_const::<'aji'>();
+        let username = 'Aji';
+        let username1 = 'Aji';
+
+        let ndef = namespace_def();
+        let mut world = spawn_test_world([ndef].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (contract_address, _) = world.dns(@"teamVerse").unwrap();
+        let actions_system = ITeamVerseDispatcher { contract_address };
+
+        testing::set_contract_address(caller_1);
+        actions_system.register_new_player(username);
+
+        testing::set_contract_address(caller_1);
+        actions_system.register_new_player(username1);
+    }
+    #[test]
+    fn test_create_game() {
+        let caller_1 = contract_address_const::<'aji'>();
+        let username = 'Ajidokwu';
+
+        let ndef = namespace_def();
+        let mut world = spawn_test_world([ndef].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (contract_address, _) = world.dns(@"teamVerse").unwrap();
+        let actions_system = ITeamVerseDispatcher { contract_address };
+
+        testing::set_contract_address(caller_1);
+        actions_system.register_new_player(username);
+
+        testing::set_contract_address(caller_1);
+        let game_id = actions_system.create_new_game(2);
+        assert(game_id == 1, 'Wrong game id');
+        println!("game_id: {}", game_id);
+
+        let game: Game = actions_system.retrieve_game(game_id);
+        assert(game.created_by == caller_1, 'Wrong creator');
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_create_game_with_one_player() {
+        let caller_1 = contract_address_const::<'aji'>();
+        let username = 'Ajidokwu';
+
+        let ndef = namespace_def();
+        let mut world = spawn_test_world([ndef].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (contract_address, _) = world.dns(@"teamVerse").unwrap();
+        let actions_system = ITeamVerseDispatcher { contract_address };
+
+        testing::set_contract_address(caller_1);
+        actions_system.register_new_player(username);
+
+        testing::set_contract_address(caller_1);
+        let game_id = actions_system.create_new_game(1);
+        assert(game_id == 1, 'Wrong game id');
+        println!("game_id: {}", game_id);
+
+        let game: Game = actions_system.retrieve_game(game_id);
+        assert(game.created_by == caller_1, 'Wrong creator');
+    }
+
+    #[test]
+    fn test_create_two_games() {
+        let caller_1 = contract_address_const::<'aji'>();
+
+        let username = 'Ajidokwu';
+
+        let ndef = namespace_def();
+        let mut world = spawn_test_world([ndef].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (contract_address, _) = world.dns(@"teamVerse").unwrap();
+        let actions_system = ITeamVerseDispatcher { contract_address };
+
+        testing::set_contract_address(caller_1);
+        actions_system.register_new_player(username);
+
+        testing::set_contract_address(caller_1);
+        let _game_id = actions_system.create_new_game(6);
+
+        testing::set_contract_address(caller_1);
+        let game_id_1 = actions_system.create_new_game(8);
+        assert(game_id_1 == 2, 'Wrong game id');
+        println!("game_id: {}", game_id_1);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_create_game_unregistered_player() {
+        let caller_1 = contract_address_const::<'aji'>();
+
+        let ndef = namespace_def();
+        let mut world = spawn_test_world([ndef].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (contract_address, _) = world.dns(@"teamVerse").unwrap();
+        let actions_system = ITeamVerseDispatcher { contract_address };
+
+        testing::set_contract_address(caller_1);
+        let game_id = actions_system.create_new_game(2);
+        assert(game_id == 1, 'Wrong game id');
+        println!("game_id: {}", game_id);
     }
 }
