@@ -1,8 +1,15 @@
 pub mod systems {
-    pub mod actions;
+    pub mod teamVerse;
 }
 
-pub mod models;
+
+pub mod interfaces {
+    pub mod ITeamVerse;
+}
+pub mod model {
+    pub mod player_model;
+    pub mod game_model;
+}
 
 pub mod tests {
     mod test_world;
