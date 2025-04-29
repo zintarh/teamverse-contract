@@ -4,18 +4,19 @@ use dojo_starter::interfaces::ITeamVerse::ITeamVerse;
 // dojo decorator
 #[dojo::contract]
 pub mod teamVerse {
-    use super::{ITeamVerse};
-    use dojo_starter::model::player_model::{
-        Player, UsernameToAddress, AddressToUsername, PlayerTrait,
-    };
-    use dojo_starter::model::game_model::{GameCounter, Game, GameTrait, GameStatus};
-    use starknet::{
-        ContractAddress, get_caller_address, contract_address_const, get_block_timestamp,
-    };
+    use dojo::event::EventStorage;
     // use dojo_starter::models::{Vec2, Moves};
 
     use dojo::model::{ModelStorage};
-    use dojo::event::EventStorage;
+    use dojo_starter::model::game_model::{Game, GameCounter, GameStatus, GameTrait};
+    use dojo_starter::model::player_model::{
+        AddressToUsername, Player, PlayerStatements, PlayerTrait, Statement, StatementTrait,
+        UsernameToAddress,
+    };
+    use starknet::{
+        ContractAddress, contract_address_const, get_block_timestamp, get_caller_address,
+    };
+    use super::ITeamVerse;
 
     #[derive(Copy, Drop, Serde)]
     #[dojo::event]
