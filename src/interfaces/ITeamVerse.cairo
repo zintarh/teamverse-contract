@@ -1,6 +1,6 @@
-use starknet::{ContractAddress};
-use dojo_starter::model::game_model::{Game};
-use dojo_starter::model::player_model::{Player};
+use dojo_starter::model::game_model::Game;
+use dojo_starter::model::player_model::{Player, PlayerStatements, Statement};
+use starknet::ContractAddress;
 #[starknet::interface]
 pub trait ITeamVerse<T> {
     fn register_new_player(ref self: T, username: felt252);
