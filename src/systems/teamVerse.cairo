@@ -194,7 +194,7 @@ pub mod teamVerse {
                 world.write_model(@statement);
 
                 i += 1;
-            }
+            };
 
             // Validate we have exactly 2 truths and 1 lie
             assert(truth_count == 2, 'MUST HAVE EXACTLY 2 TRUTHS');
