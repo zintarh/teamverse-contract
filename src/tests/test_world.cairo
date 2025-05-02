@@ -44,7 +44,7 @@ mod tests {
                 .with_writer_of([dojo::utils::bytearray_hash(@"dojo_starter")].span())
         ]
             .span()
-    }
+    };
 
     #[test]
     fn test_player_registration() {
@@ -64,7 +64,7 @@ mod tests {
         println!("username: {}", player.username);
         assert(player.player == caller_1, 'incorrect address');
         assert(player.username == 'Aji', 'incorrect username');
-    }
+    };
 
     #[test]
     #[should_panic]
@@ -85,7 +85,7 @@ mod tests {
 
         testing::set_contract_address(caller_2);
         actions_system.register_new_player(username);
-    }
+    };
 
     #[test]
     #[should_panic]
@@ -106,7 +106,7 @@ mod tests {
 
         testing::set_contract_address(caller_1);
         actions_system.register_new_player(username1);
-    }
+    };
 
     #[test]
     #[should_panic]
@@ -127,7 +127,7 @@ mod tests {
 
         testing::set_contract_address(caller_1);
         actions_system.register_new_player(username1);
-    }
+    };
     #[test]
     fn test_create_game() {
         let caller_1 = contract_address_const::<'aji'>();
@@ -175,7 +175,7 @@ mod tests {
 
         let game: Game = actions_system.retrieve_game(game_id);
         assert(game.created_by == caller_1, 'Wrong creator');
-    }
+    };
 
     #[test]
     fn test_create_two_games() {
@@ -200,7 +200,7 @@ mod tests {
         let game_id_1 = actions_system.create_new_game(8);
         assert(game_id_1 == 2, 'Wrong game id');
         println!("game_id: {}", game_id_1);
-    }
+    };
 
     #[test]
     #[should_panic]
@@ -218,7 +218,7 @@ mod tests {
         let game_id = actions_system.create_new_game(2);
         assert(game_id == 1, 'Wrong game id');
         println!("game_id: {}", game_id);
-    }
+    };
 
     // Tests for 2 Truths and a Lie
     #[test]
@@ -262,7 +262,7 @@ mod tests {
         let player_statements = actions_system.get_player_statements(caller_1, game_id);
         assert(player_statements.sets_submitted == 1, 'Should have 1 set submitted');
         assert(player_statements.has_submitted == true, 'Should be marked as submitted');
-    }
+    };
 
     #[test]
     fn test_submit_multiple_statement_sets() {
@@ -298,7 +298,7 @@ mod tests {
         // Verify player statement tracker was updated
         let player_statements = actions_system.get_player_statements(caller_1, game_id);
         assert(player_statements.sets_submitted == 2, 'Should have 2 sets submitted');
-    }
+    };
 
     #[test]
     fn test_submit_max_statement_sets() {
@@ -333,7 +333,7 @@ mod tests {
         // Verify player statement tracker shows 3 sets submitted
         let player_statements = actions_system.get_player_statements(caller_1, game_id);
         assert(player_statements.sets_submitted == 3, 'Should have 3 sets submitted');
-    }
+    };
 
     #[test]
     #[should_panic(expected: ('MAX SETS SUBMITTED',))]
@@ -372,7 +372,7 @@ mod tests {
 
         testing::set_contract_address(caller_1);
         actions_system.submit_statement_set(game_id, 1, statements, lie_index);
-    }
+    };
 
     #[test]
     #[should_panic(expected: ('MUST PROVIDE 3 STATEMENTS',))]
@@ -424,5 +424,5 @@ mod tests {
 
         testing::set_contract_address(caller_1);
         actions_system.submit_statement_set(game_id, 1, statements, lie_index);
-    }
+    };
 }
