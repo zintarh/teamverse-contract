@@ -1,4 +1,4 @@
-use starknet::{ContractAddress, get_block_timestamp, contract_address_const};
+use starknet::{ContractAddress, contract_address_const, get_block_timestamp};
 // Keeps track of the state of the game
 
 #[derive(Serde, Copy, Drop, Introspect, PartialEq)]

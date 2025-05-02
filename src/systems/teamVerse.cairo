@@ -4,18 +4,19 @@ use dojo_starter::interfaces::ITeamVerse::ITeamVerse;
 // dojo decorator
 #[dojo::contract]
 pub mod teamVerse {
-    use super::{ITeamVerse};
-    use dojo_starter::model::player_model::{
-        Player, UsernameToAddress, AddressToUsername, PlayerTrait,
-    };
-    use dojo_starter::model::game_model::{GameCounter, Game, GameTrait, GameStatus};
-    use starknet::{
-        ContractAddress, get_caller_address, contract_address_const, get_block_timestamp,
-    };
+    use dojo::event::EventStorage;
     // use dojo_starter::models::{Vec2, Moves};
 
     use dojo::model::{ModelStorage};
-    use dojo::event::EventStorage;
+    use dojo_starter::model::game_model::{Game, GameCounter, GameStatus, GameTrait};
+    use dojo_starter::model::player_model::{
+        AddressToUsername, Player, PlayerStatements, PlayerTrait, Statement, StatementTrait,
+        UsernameToAddress,
+    };
+    use starknet::{
+        ContractAddress, contract_address_const, get_block_timestamp, get_caller_address,
+    };
+    use super::ITeamVerse;
 
     #[derive(Copy, Drop, Serde)]
     #[dojo::event]
@@ -30,6 +31,17 @@ pub mod teamVerse {
     pub struct GameCreated {
         #[key]
         pub game_id: u256,
+        pub timestamp: u64,
+    }
+
+    #[derive(Copy, Drop, Serde)]
+    #[dojo::event]
+    pub struct StatementSetSubmitted {
+        #[key]
+        pub player: ContractAddress,
+        #[key]
+        pub game_id: u256,
+        pub set_id: u8,
         pub timestamp: u64,
     }
 
@@ -129,6 +141,89 @@ pub mod teamVerse {
             let player: Player = world.read_model(addr);
 
             player
+        }
+
+        // 2 Truths and a Lie implementations
+        fn submit_statement_set(
+            ref self: ContractState,
+            game_id: u256,
+            set_id: u8,
+            statements: Array<felt252>,
+            lie_index: u8,
+        ) {
+            let mut world = self.world_default();
+            let caller = get_caller_address();
+
+            // Validate inputs
+            assert(set_id > 0 && set_id <= 3, 'SET_ID MUST BE 1-3');
+            assert(statements.len() == 3, 'MUST PROVIDE 3 STATEMENTS');
+            assert(lie_index >= 1 && lie_index <= 3, 'LIE_INDEX MUST BE 1-3');
+
+            // Ensure the game exists and is ongoing
+            let game: Game = world.read_model(game_id);
+            assert(game.id == game_id, 'GAME DOES NOT EXIST');
+            assert(game.status != GameStatus::Ended, 'GAME HAS ENDED');
+
+            // Check if player has already submitted max sets
+            let mut player_statements: PlayerStatements = world.read_model((caller, game_id));
+            assert(player_statements.sets_submitted < 3, 'MAX SETS SUBMITTED');
+
+            // Create statements (2 truths and 1 lie)
+            let mut i: u8 = 1;
+            let mut truth_count: u8 = 0;
+            let mut lie_count: u8 = 0;
+
+            loop {
+                if i > 3 {
+                    break;
+                }
+
+                let statement_content = *statements.at(i.into() - 1);
+                assert(statement_content != 0, 'STATEMENT CANNOT BE EMPTY');
+
+                let is_truth = i != lie_index;
+
+                if is_truth {
+                    truth_count += 1;
+                } else {
+                    lie_count += 1;
+                }
+
+                let statement = StatementTrait::new(caller, set_id, i, statement_content, is_truth);
+
+                world.write_model(@statement);
+
+                i += 1;
+            };
+
+            // Validate we have exactly 2 truths and 1 lie
+            assert(truth_count == 2, 'MUST HAVE EXACTLY 2 TRUTHS');
+            assert(lie_count == 1, 'MUST HAVE EXACTLY 1 LIE');
+
+            // Update player's submitted sets count
+            player_statements.sets_submitted += 1;
+            player_statements.has_submitted = true;
+            world.write_model(@player_statements);
+
+            // Emit event for statement submission
+            let timestamp = get_block_timestamp();
+            world.emit_event(@StatementSetSubmitted { player: caller, game_id, set_id, timestamp });
+        }
+
+        fn get_player_statements(
+            self: @ContractState, player: ContractAddress, game_id: u256,
+        ) -> PlayerStatements {
+            let world = self.world_default();
+            let player_statements: PlayerStatements = world.read_model((player, game_id));
+            player_statements
+        }
+
+        fn get_statement(
+            self: @ContractState, player: ContractAddress, set_id: u8, statement_id: u8,
+        ) -> Statement {
+            let world = self.world_default();
+            let statement: Statement = world.read_model((player, set_id, statement_id));
+            statement
         }
     }
 
