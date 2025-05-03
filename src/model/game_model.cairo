@@ -34,8 +34,8 @@ pub trait GameTrait {
     ) -> Game;
     fn restart(ref self: Game);
     fn terminate_game(ref self: Game);
+    fn join_game(ref self: Game, player: ContractAddress);
 }
-
 
 // Represents the status of the game
 // Can either be Ongoing or Ended
@@ -74,6 +74,10 @@ impl GameImpl of GameTrait {
 
     fn terminate_game(ref self: Game) {
         self.status = GameStatus::Ended;
+    }
+
+    fn join_game(ref self: Game, player: ContractAddress) {
+        self.number_of_players += 1;
     }
 }
 
