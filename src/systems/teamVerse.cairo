@@ -155,12 +155,10 @@ pub mod teamVerse {
             // Check if the game is in a valid state
             assert(game.status == GameStatus::Pending, 'GAME NOT IN PENDING STATE');
 
-            world.emit_event(@PlayerJoined {
-                game_id,
-                player: caller,
-                timestamp: get_block_timestamp(),
-            });
-            
+            world
+                .emit_event(
+                    @PlayerJoined { game_id, player: caller, timestamp: get_block_timestamp() },
+                );
         }
     }
 

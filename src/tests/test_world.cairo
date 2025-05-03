@@ -242,7 +242,6 @@ mod tests {
         testing::set_contract_address(caller_2);
         actions_system.register_new_player(username1);
 
-
         testing::set_contract_address(caller_1);
         let game_id = actions_system.create_new_game(2);
         assert(game_id == 1, 'Wrong game id');
