@@ -8,6 +8,11 @@ pub mod teamVerse {
     use dojo_starter::model::player_model::{
         Player, UsernameToAddress, AddressToUsername, PlayerTrait,
     };
+
+    use dojo_starter::model::team_model::{
+        Team, TeamTrait,
+    };
+
     use dojo_starter::model::game_model::{GameCounter, Game, GameTrait, GameStatus};
     use starknet::{
         ContractAddress, get_caller_address, contract_address_const, get_block_timestamp,
@@ -129,6 +134,24 @@ pub mod teamVerse {
             let player: Player = world.read_model(addr);
 
             player
+        }
+
+        fn create_team(ref self: ContractState, team_name: felt252) -> bool{
+            let mut world = self.world_default();
+
+            let creator: ContractAddress = get_caller_address();
+
+            let zero_address: ContractAddress = contract_address_const::<0x0>();
+
+            // Validate team name
+            assert(team_name != 0, 'TEAM NAME CANNOT BE ZERO');
+
+            let new_team: Team = TeamTrait::new(team_name, creator);
+
+            // world.write_model(@new_team);
+
+            true
+
         }
     }
 
