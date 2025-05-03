@@ -33,6 +33,25 @@ pub mod teamVerse {
         pub timestamp: u64,
     }
 
+    #[derive(Copy, Drop, Serde)]
+    #[dojo::event]
+    pub struct PlayerStatsUpdated {
+        #[key]
+        pub player: ContractAddress,
+        pub game_id: u256,
+        pub correct_guesses: u256,
+        pub incorrect_guesses: u256,
+    }
+
+    #[derive(Copy, Drop, Serde)]
+    #[dojo::event]
+    pub struct GameEnded {
+        #[key]
+        pub game_id: u256,
+        pub winner: ContractAddress,
+        pub timestamp: u64,
+    }
+
     #[abi(embed_v0)]
     impl TeamVerseImpl of ITeamVerse<ContractState> {
         fn get_username_from_address(self: @ContractState, address: ContractAddress) -> felt252 {
@@ -135,6 +154,73 @@ pub mod teamVerse {
             let player: Player = world.read_model(addr);
 
             player
+        }
+
+        fn update_game_stats(
+            ref self: ContractState,
+            game_id: u256,
+            player: ContractAddress,
+            correct_guesses: u256,
+            incorrect_guesses: u256,
+        ) {
+            let mut world = self.world_default();
+            let mut game: Game = world.read_model(game_id);
+
+            // Only allow updates for active games
+            assert(game.status == GameStatus::Ongoing, 'GAME NOT ACTIVE');
+
+            // Update game stats
+            game.update_player_stats(player, correct_guesses, incorrect_guesses);
+            world.write_model(@game);
+
+            // Emit event
+            world
+                .emit_event(
+                    @PlayerStatsUpdated { player, game_id, correct_guesses, incorrect_guesses },
+                );
+        }
+
+        fn end_game(ref self: ContractState, game_id: u256, winner: ContractAddress) {
+            let mut world = self.world_default();
+            let mut game: Game = world.read_model(game_id);
+
+            // Only allow ending active games
+            assert(game.status == GameStatus::Ongoing, 'GAME NOT ACTIVE');
+
+            // Update game status and winner
+            game.set_winner(winner);
+            game.terminate_game();
+            world.write_model(@game);
+
+            // Update player stats
+            let mut player: Player = world.read_model(winner);
+            let player_stats = game.player_stats;
+            let mut i = 0;
+            loop {
+                if i >= player_stats.len() {
+                    break;
+                }
+
+                let player_stat = *player_stats[i];
+
+                if player_stat.player == winner {
+                    player
+                        .update_stats(
+                            true,
+                            player_stat.correct_guesses,
+                            player_stat.incorrect_guesses,
+                            get_block_timestamp(),
+                        );
+                    break;
+                }
+
+                i += 1;
+            };
+
+            world.write_model(@player);
+
+            // Emit event
+            world.emit_event(@GameEnded { game_id, winner, timestamp: get_block_timestamp() });
         }
     }
 

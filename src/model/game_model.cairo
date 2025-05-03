@@ -49,6 +49,10 @@ pub trait GameTrait {
         created_at: u64,
         updated_at: u64,
     ) -> Game;
+    fn update_player_stats(
+        ref self: Game, player: ContractAddress, correct_guesses: u256, incorrect_guesses: u256,
+    );
+    fn set_winner(ref self: Game, winner: ContractAddress);
     fn restart(ref self: Game);
     fn terminate_game(ref self: Game);
 }
@@ -94,6 +98,53 @@ impl GameImpl of GameTrait {
         }
     }
 
+    fn update_player_stats(
+        ref self: Game, player: ContractAddress, correct_guesses: u256, incorrect_guesses: u256,
+    ) {
+        let mut stats = self.player_stats;
+        let mut found = false;
+        let mut i = 0;
+
+        let mut new_stats = ArrayTrait::new();
+
+        loop {
+            if i >= stats.len() {
+                break;
+            }
+
+            let mut player_stat = *stats[i];
+
+            if player_stat.player == player {
+                player_stat.correct_guesses += correct_guesses;
+                player_stat.incorrect_guesses += incorrect_guesses;
+                player_stat.score = player_stat.correct_guesses * 2 - player_stat.incorrect_guesses;
+                new_stats.append(player_stat);
+                i += 1;
+                found = true;
+                continue;
+            }
+
+            new_stats.append(player_stat);
+
+            i += 1;
+        };
+
+        if !found {
+            let new_player_stat = PlayerGameStats {
+                player,
+                correct_guesses,
+                incorrect_guesses,
+                score: correct_guesses * 2 - incorrect_guesses,
+            };
+            new_stats.append(new_player_stat);
+        }
+
+        self.player_stats = new_stats;
+    }
+
+    fn set_winner(ref self: Game, winner: ContractAddress) {
+        self.winner = winner;
+    }
 
     fn restart(ref self: Game) {}
 
@@ -225,5 +276,102 @@ mod tests {
         assert(player1_stats.correct_guesses == @0_u256, 'Correct guesses should be 0');
         assert(player1_stats.incorrect_guesses == @0_u256, 'Incorrect guesses should be 0');
         assert(player1_stats.score == @0_u256, 'Initial score should be 0');
+    }
+
+    #[test]
+    fn test_update_existing_player_stats() {
+        let game_id = 1;
+        let creator = contract_address_const::<0x1234>();
+        let player1 = contract_address_const::<0x5678>();
+
+        let mut player_stats: Array<PlayerGameStats> = ArrayTrait::new();
+        player_stats
+            .append(
+                PlayerGameStats {
+                    player: player1, correct_guesses: 0, incorrect_guesses: 0, score: 0,
+                },
+            );
+
+        let mut game = GameImpl::new(
+            game_id,
+            creator,
+            GameStatus::Pending,
+            player1,
+            1,
+            1,
+            5,
+            contract_address_const::<0x0>(),
+            player_stats,
+            get_block_timestamp(),
+            get_block_timestamp(),
+        );
+
+        // Update existing player stats
+        game.update_player_stats(player1, 3, 1);
+
+        let updated_stats = game.player_stats.at(0);
+        assert(updated_stats.player == @player1, 'Player address should match');
+        println!("updated_stats.correct_guesses: {}", updated_stats.correct_guesses);
+        assert(updated_stats.correct_guesses == @3_u256, 'Correct guesses should be 3');
+        assert(updated_stats.incorrect_guesses == @1_u256, 'Incorrect guesses should be 1');
+        assert(updated_stats.score == @5_u256, 'Score should be 5 (3*2 - 1)');
+
+        // Update again to test accumulation
+        game.update_player_stats(player1, 2, 1);
+
+        let final_stats = game.player_stats.at(0);
+        assert(final_stats.correct_guesses == @5_u256, 'Correct guesses should be 5');
+        assert(final_stats.incorrect_guesses == @2_u256, 'Incorrect guesses should be 2');
+        assert(final_stats.score == @8_u256, 'Score should be 8 (5*2 - 2)');
+    }
+
+    #[test]
+    #[available_gas(999999)]
+    fn test_add_new_player_stats() {
+        let game_id = 1;
+        let creator = contract_address_const::<0x1234>();
+        let player1 = contract_address_const::<0x5678>();
+        let player2 = contract_address_const::<0x9abc>();
+
+        let mut player_stats: Array<PlayerGameStats> = ArrayTrait::new();
+        player_stats
+            .append(
+                PlayerGameStats {
+                    player: player1, correct_guesses: 0, incorrect_guesses: 0, score: 0,
+                },
+            );
+
+        let mut game = GameImpl::new(
+            game_id,
+            creator,
+            GameStatus::Pending,
+            player1,
+            2,
+            1,
+            5,
+            contract_address_const::<0x0>(),
+            player_stats,
+            get_block_timestamp(),
+            get_block_timestamp(),
+        );
+
+        // Add stats for a new player
+        game.update_player_stats(player2, 4, 2);
+
+        assert(game.player_stats.len() == 2, '2 players expected');
+
+        // Verify new player stats
+        let new_player_stats = game.player_stats.at(1);
+        assert(new_player_stats.player == @player2, 'Address should match');
+        assert(new_player_stats.correct_guesses == @4_u256, 'Correct guesses should be 4');
+        assert(new_player_stats.incorrect_guesses == @2_u256, 'Incorrect guesses should be 2');
+        assert(new_player_stats.score == @6_u256, 'Score should be 6');
+
+        // Verify original player stats unchanged
+        let original_stats = game.player_stats.at(0);
+        assert(original_stats.player == @player1, 'Player address should match');
+        assert(original_stats.correct_guesses == @0_u256, 'Correct guesses should be 0');
+        assert(original_stats.incorrect_guesses == @0_u256, 'Incorrect guesses should be 0');
+        assert(original_stats.score == @0_u256, 'Score should be 0');
     }
 }
