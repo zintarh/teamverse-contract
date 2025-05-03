@@ -18,4 +18,6 @@ pub trait ITeamVerse<T> {
         incorrect_guesses: u256,
     );
     fn end_game(ref self: T, game_id: u256, winner: ContractAddress);
+    // team creation
+    fn create_team(ref self: T, team_name: felt252) -> bool;
 }

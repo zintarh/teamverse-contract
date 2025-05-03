@@ -254,4 +254,27 @@ mod tests {
         testing::set_contract_address(caller_2);
         actions_system.join_game(game_id);
     }
+
+    #[test]
+    fn test_team_creation() {
+        let caller_1 = contract_address_const::<'aji'>();
+
+        let username = 'Aji';
+
+        let ndef = namespace_def();
+
+        let mut world = spawn_test_world([ndef].span());
+
+        world.sync_perms_and_inits(contract_defs());
+
+        let (contract_address, _) = world.dns(@"teamVerse").unwrap();
+
+        let actions_system = ITeamVerseDispatcher { contract_address };
+
+        testing::set_contract_address(caller_1);
+
+        let status: bool = actions_system.create_team('Teamverse');
+
+        assert(status == true, 'Team creation failed');
+    }
 }
