@@ -98,6 +98,8 @@ pub mod teamVerse {
             let game_id = self.create_new_game_id();
             let timestamp = get_block_timestamp();
 
+            let zero_address = contract_address_const::<0x0>();
+
             // Create a new game
             let mut new_game: Game = GameTrait::new(
                 id: game_id,
@@ -105,6 +107,10 @@ pub mod teamVerse {
                 status: GameStatus::Pending,
                 next_player: caller,
                 number_of_players: number_of_players,
+                current_round: 0,
+                max_rounds: 10,
+                winner: zero_address,
+                player_stats: ArrayTrait::new(),
                 created_at: timestamp,
                 updated_at: timestamp,
             );
