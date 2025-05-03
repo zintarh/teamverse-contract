@@ -52,6 +52,15 @@ pub mod teamVerse {
         pub timestamp: u64,
     }
 
+    #[derive(Copy, Drop, Serde)]
+    #[dojo::event]
+    pub struct PlayerJoined {
+        #[key]
+        pub game_id: u256,
+        pub player: ContractAddress,
+        pub timestamp: u64,
+    }
+
     #[abi(embed_v0)]
     impl TeamVerseImpl of ITeamVerse<ContractState> {
         fn get_username_from_address(self: @ContractState, address: ContractAddress) -> felt252 {
@@ -154,6 +163,26 @@ pub mod teamVerse {
             let player: Player = world.read_model(addr);
 
             player
+        }
+
+        fn join_game(ref self: ContractState, game_id: u256) {
+            // Get default world
+            let mut world = self.world_default();
+
+            // Caller must be registered
+            let caller = get_caller_address();
+            let caller_name = self.get_username_from_address(caller);
+            assert(caller_name != 0, 'PLAYER NOT REGISTERED');
+
+            let game: Game = world.read_model(game_id);
+
+            // Check if the game is in a valid state
+            assert(game.status == GameStatus::Pending, 'GAME NOT IN PENDING STATE');
+
+            world
+                .emit_event(
+                    @PlayerJoined { game_id, player: caller, timestamp: get_block_timestamp() },
+                );
         }
 
         fn update_game_stats(

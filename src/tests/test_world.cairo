@@ -31,6 +31,7 @@ mod tests {
                 TestResource::Model(m_GameCounter::TEST_CLASS_HASH),
                 TestResource::Event(teamVerse::e_PlayerCreated::TEST_CLASS_HASH),
                 TestResource::Event(teamVerse::e_GameCreated::TEST_CLASS_HASH),
+                TestResource::Event(teamVerse::e_PlayerJoined::TEST_CLASS_HASH),
                 TestResource::Contract(teamVerse::TEST_CLASS_HASH),
             ]
                 .span(),
@@ -219,5 +220,38 @@ mod tests {
         let game_id = actions_system.create_new_game(2);
         assert(game_id == 1, 'Wrong game id');
         println!("game_id: {}", game_id);
+    }
+
+
+    #[test]
+    fn test_join_game() {
+        let caller_1 = contract_address_const::<'aji'>();
+        let caller_2 = contract_address_const::<'dreamer'>();
+        let username = 'Ajidokwu';
+        let username1 = 'Dreamer';
+
+        let ndef = namespace_def();
+        let mut world = spawn_test_world([ndef].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (contract_address, _) = world.dns(@"teamVerse").unwrap();
+        let actions_system = ITeamVerseDispatcher { contract_address };
+
+        testing::set_contract_address(caller_1);
+        actions_system.register_new_player(username);
+
+        testing::set_contract_address(caller_2);
+        actions_system.register_new_player(username1);
+
+        testing::set_contract_address(caller_1);
+        let game_id = actions_system.create_new_game(2);
+        assert(game_id == 1, 'Wrong game id');
+        println!("game_id: {}", game_id);
+
+        let game: Game = actions_system.retrieve_game(game_id);
+        assert(game.created_by == caller_1, 'Wrong creator');
+
+        testing::set_contract_address(caller_2);
+        actions_system.join_game(game_id);
     }
 }
