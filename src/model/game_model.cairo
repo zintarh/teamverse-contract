@@ -55,6 +55,7 @@ pub trait GameTrait {
     fn set_winner(ref self: Game, winner: ContractAddress);
     fn restart(ref self: Game);
     fn terminate_game(ref self: Game);
+    fn join_game(ref self: Game, player: ContractAddress);
 }
 
 
@@ -150,6 +151,10 @@ impl GameImpl of GameTrait {
 
     fn terminate_game(ref self: Game) {
         self.status = GameStatus::Ended;
+    }
+
+    fn join_game(ref self: Game, player: ContractAddress) {
+        self.number_of_players += 1;
     }
 }
 
