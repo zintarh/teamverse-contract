@@ -1,6 +1,7 @@
 use dojo_starter::interfaces::ITeamVerse::ITeamVerse;
 // define the interface
 
+use dojo_starter::model::team_model::{Team, TeamTrait};
 // dojo decorator
 #[dojo::contract]
 pub mod teamVerse {
@@ -250,6 +251,22 @@ pub mod teamVerse {
 
             // Emit event
             world.emit_event(@GameEnded { game_id, winner, timestamp: get_block_timestamp() });
+        }
+
+        fn create_team(ref self: ContractState, team_name: felt252) -> bool {
+            let mut world = self.world_default();
+
+            let creator: ContractAddress = get_caller_address();
+
+            let zero_address: ContractAddress = contract_address_const::<0x0>();
+
+            // Validate team name
+
+            assert(team_name != 0, 'TEAM NAME CANNOT BE ZERO');
+
+            // world.write_model(@new_team);
+
+            true
         }
     }
 
