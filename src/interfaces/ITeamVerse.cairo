@@ -9,4 +9,5 @@ pub trait ITeamVerse<T> {
     fn create_new_game_id(ref self: T) -> u256;
     fn retrieve_game(ref self: T, game_id: u256) -> Game;
     fn retrieve_player(ref self: T, addr: ContractAddress) -> Player;
+    fn join_game(ref self: T, game_id: u256);
 }

@@ -130,6 +130,28 @@ pub mod teamVerse {
 
             player
         }
+
+        fn join_game(ref self: ContractState, game_id: u256) {
+            // Caller must be registered
+            let caller = get_caller_address();
+            let caller_name = self.get_username_from_address(caller);
+            assert(caller_name != 0, 'PLAYER NOT REGISTERED');
+            // Get default world
+            let mut world = self.world_default();
+            // Get the game state
+            let mut game: Game = world.read_model(game_id);
+            // Check if the game is ongoing
+            assert(game.status == GameStatus::Ongoing, 'Game is not ongoing');
+            // Check if the player is already in the game
+            assert(game.next_player != caller, 'Player is already in the game');
+
+            // Check if the game is full
+            assert(game.number_of_players > 0, 'Game is full');
+            // Add the player to the game
+            game.join_game(caller);
+            // Update the game state
+            world.write_model(@game);
+        }
     }
 
     #[generate_trait]

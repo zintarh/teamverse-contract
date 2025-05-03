@@ -1,5 +1,8 @@
 use starknet::{ContractAddress, get_block_timestamp, contract_address_const};
 // Keeps track of the state of the game
+use starknet::storage::{
+    StoragePointerReadAccess, StoragePointerWriteAccess, Vec, VecTrait, MutableVecTrait,
+};
 
 #[derive(Serde, Copy, Drop, Introspect, PartialEq)]
 #[dojo::model]
@@ -21,6 +24,18 @@ pub struct Game {
     pub created_at: u64, // Timestamp of session creation
     pub updated_at: u64,
 }
+
+#[derive(Copy, Drop, Serde, Debug)]
+#[dojo::model]
+pub struct GamePlayersAmount {
+    /// The unique identifier for the associated trivia game.
+    #[key]
+    pub game_id: u256,
+    /// The total number of questions associated with this trivia game.
+    pub players: u8,
+}
+
+
 pub trait GameTrait {
     // Create and return a new game
     fn new(
@@ -34,6 +49,7 @@ pub trait GameTrait {
     ) -> Game;
     fn restart(ref self: Game);
     fn terminate_game(ref self: Game);
+    fn join_game(ref self: Game, player: ContractAddress);
 }
 
 
@@ -74,6 +90,15 @@ impl GameImpl of GameTrait {
 
     fn terminate_game(ref self: Game) {
         self.status = GameStatus::Ended;
+    }
+
+    fn join_game(ref self: Game, player: ContractAddress) {
+        // Check if the game is ongoing
+        assert(self.status == GameStatus::Ongoing, 'Game is not ongoing');
+        // Check if the player is already in the game
+        assert(self.next_player != player, 'Player is already in the game');
+        // add player to the game
+    // self.players.push(player);
     }
 }
 
