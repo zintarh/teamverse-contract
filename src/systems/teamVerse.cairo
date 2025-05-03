@@ -264,8 +264,6 @@ pub mod teamVerse {
 
             assert(team_name != 0, 'TEAM NAME CANNOT BE ZERO');
 
-            let new_team: Team = TeamTrait::new(team_name, creator);
-
             // world.write_model(@new_team);
 
             true
