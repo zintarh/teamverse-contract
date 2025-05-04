@@ -20,4 +20,12 @@ pub trait ITeamVerse<T> {
     fn end_game(ref self: T, game_id: u256, winner: ContractAddress);
     // team creation
     fn create_team(ref self: T, team_name: felt252) -> bool;
+    fn submit_questions(
+        ref self: T,
+        game_id: u256,
+        statement1: felt252,
+        statement2: felt252,
+        statement3: felt252,
+        lie_index: u8,
+    );
 }

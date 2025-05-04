@@ -34,6 +34,20 @@ pub struct Game {
     pub updated_at: u64,
 }
 
+#[derive(Serde, Drop, Introspect, PartialEq)]
+#[dojo::model]
+pub struct RoundQuestions {
+    #[key]
+    pub game_id: u256,
+    #[key]
+    pub round: u8,
+    pub player: ContractAddress,
+    pub statement1: felt252,
+    pub statement2: felt252,
+    pub statement3: felt252,
+    pub lie_index: u8,
+}
+
 pub trait GameTrait {
     // Create and return a new game
     fn new(
