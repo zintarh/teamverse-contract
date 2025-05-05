@@ -1,5 +1,5 @@
 use starknet::{ContractAddress};
-use dojo_starter::model::game_model::{Game};
+use dojo_starter::model::game_model::{Game, RoundQuestions};
 use dojo_starter::model::player_model::{Player};
 #[starknet::interface]
 pub trait ITeamVerse<T> {
@@ -20,4 +20,13 @@ pub trait ITeamVerse<T> {
     fn end_game(ref self: T, game_id: u256, winner: ContractAddress);
     // team creation
     fn create_team(ref self: T, team_name: felt252) -> bool;
+    fn submit_questions(
+        ref self: T,
+        game_id: u256,
+        statement1: felt252,
+        statement2: felt252,
+        statement3: felt252,
+        lie_index: u8,
+    );
+    fn retrieve_submittedQuestions(ref self: T, game_id: u256) -> RoundQuestions;
 }

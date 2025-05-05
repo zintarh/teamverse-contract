@@ -9,7 +9,7 @@ pub mod teamVerse {
     use dojo_starter::model::player_model::{
         Player, UsernameToAddress, AddressToUsername, PlayerTrait,
     };
-    use dojo_starter::model::game_model::{GameCounter, Game, GameTrait, GameStatus};
+    use dojo_starter::model::game_model::{GameCounter, Game, GameTrait, GameStatus, RoundQuestions};
     use starknet::{
         ContractAddress, get_caller_address, contract_address_const, get_block_timestamp,
     };
@@ -60,6 +60,15 @@ pub mod teamVerse {
         pub game_id: u256,
         pub player: ContractAddress,
         pub timestamp: u64,
+    }
+
+    #[derive(Copy, Drop, Serde)]
+    #[dojo::event]
+    pub struct QuestionsSubmitted {
+        #[key]
+        pub game_id: u256,
+        pub round: u8,
+        pub player: ContractAddress,
     }
 
     #[abi(embed_v0)]
@@ -267,6 +276,53 @@ pub mod teamVerse {
             // world.write_model(@new_team);
 
             true
+        }
+
+        fn submit_questions(
+            ref self: ContractState,
+            game_id: u256,
+            statement1: felt252,
+            statement2: felt252,
+            statement3: felt252,
+            lie_index: u8,
+        ) {
+            let mut world = self.world_default();
+            let caller = get_caller_address();
+            let game: Game = world.read_model(game_id);
+
+            assert(statement1 != 0, 'STATEMENT1 CANNOT BE EMPTY');
+            assert(statement2 != 0, 'STATEMENT2 CANNOT BE EMPTY');
+            assert(statement3 != 0, 'STATEMENT3 CANNOT BE EMPTY');
+            assert(game.status == GameStatus::Pending, 'GAME NOT PENDING');
+            assert(caller == game.next_player, 'NOT YOUR TURN');
+            assert(lie_index < 3, 'INVALID LIE INDEX');
+            let round_questions = RoundQuestions {
+                game_id,
+                round: game.current_round,
+                player: caller,
+                statement1,
+                statement2,
+                statement3,
+                lie_index,
+            };
+            world.write_model(@round_questions);
+            let mut updated_game = game;
+            updated_game.next_player = contract_address_const::<0x0>();
+            world.write_model(@updated_game);
+            world
+                .emit_event(
+                    @QuestionsSubmitted {
+                        game_id, round: updated_game.current_round, player: caller,
+                    },
+                );
+        }
+
+        fn retrieve_submittedQuestions(ref self: ContractState, game_id: u256) -> RoundQuestions {
+            // Get default world
+            let mut world = self.world_default();
+            let roundQuestions: RoundQuestions = world.read_model(game_id);
+
+            roundQuestions
         }
     }
 
