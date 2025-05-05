@@ -1,5 +1,5 @@
 use starknet::{ContractAddress};
-use dojo_starter::model::game_model::{Game};
+use dojo_starter::model::game_model::{Game, RoundQuestions};
 use dojo_starter::model::player_model::{Player};
 #[starknet::interface]
 pub trait ITeamVerse<T> {
@@ -28,4 +28,5 @@ pub trait ITeamVerse<T> {
         statement3: felt252,
         lie_index: u8,
     );
+    fn retrieve_submittedQuestions(ref self: T, game_id: u256) -> RoundQuestions;
 }

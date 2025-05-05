@@ -293,7 +293,7 @@ pub mod teamVerse {
             assert(statement1 != 0, 'STATEMENT1 CANNOT BE EMPTY');
             assert(statement2 != 0, 'STATEMENT2 CANNOT BE EMPTY');
             assert(statement3 != 0, 'STATEMENT3 CANNOT BE EMPTY');
-            assert(game.status == GameStatus::Ongoing, 'GAME NOT ONGOING');
+            assert(game.status == GameStatus::Pending, 'GAME NOT PENDING');
             assert(caller == game.next_player, 'NOT YOUR TURN');
             assert(lie_index < 3, 'INVALID LIE INDEX');
             let round_questions = RoundQuestions {
@@ -315,6 +315,14 @@ pub mod teamVerse {
                         game_id, round: updated_game.current_round, player: caller,
                     },
                 );
+        }
+
+        fn retrieve_submittedQuestions(ref self: ContractState, game_id: u256) -> RoundQuestions {
+            // Get default world
+            let mut world = self.world_default();
+            let roundQuestions: RoundQuestions = world.read_model(game_id);
+
+            roundQuestions
         }
     }
 

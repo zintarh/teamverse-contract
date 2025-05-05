@@ -34,12 +34,11 @@ pub struct Game {
     pub updated_at: u64,
 }
 
-#[derive(Serde, Drop, Introspect, PartialEq)]
+#[derive(Serde, Drop, PartialEq)]
 #[dojo::model]
 pub struct RoundQuestions {
     #[key]
     pub game_id: u256,
-    #[key]
     pub round: u8,
     pub player: ContractAddress,
     pub statement1: felt252,
@@ -102,7 +101,7 @@ impl GameImpl of GameTrait {
             id,
             created_by,
             status: GameStatus::Pending,
-            next_player: zero_address.into(),
+            next_player, // changed it to dynamically get the address
             number_of_players,
             current_round,
             max_rounds,
@@ -217,7 +216,9 @@ mod tests {
         assert(game.id == game_id, 'Game ID should match');
         assert(game.created_by == creator, 'Creator address should match');
         assert(game.status == GameStatus::Pending, 'Status should be Pending');
-        assert(game.next_player == zero_address, 'Next player zero');
+        assert(
+            game.next_player == player1, 'Next should be player1',
+        ); // now it returns the real value of nextplayer instead of zeroAddr
         assert(game.number_of_players == 2, 'Number of players should be 2');
         assert(game.current_round == 1, 'Current round should be 1');
         assert(game.max_rounds == 5, 'Max rounds should be 5');
